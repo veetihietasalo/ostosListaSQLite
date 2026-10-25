@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Button, TextInput, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
-import * as SQLite from 'expo-sqlite';
-
-const db = SQLite.openDatabase('ShoppingListDB');
+// SQLite on the phone (storage.js), localStorage on web (storage.web.js)
+import * as storage from './storage';
 
 const App = () => {
   const [product, setProduct] = useState('');
@@ -10,34 +9,22 @@ const App = () => {
   const [shoppingList, setShoppingList] = useState([]);
 
   useEffect(() => {
-    db.transaction(tx => {
-      tx.executeSql(
-        'CREATE TABLE IF NOT EXISTS shopping_list (id INTEGER PRIMARY KEY AUTOINCREMENT, product TEXT, amount TEXT);'
-      );
-    });
+    storage.initStorage();
     updateList();
   }, []);
 
   const updateList = () => {
-    db.transaction(tx => {
-      tx.executeSql('SELECT * FROM shopping_list;', [], (_, { rows }) =>
-        setShoppingList(rows._array)
-      );
-    });
+    storage.listItems(setShoppingList);
   };
 
   const saveItem = () => {
-    db.transaction(tx => {
-      tx.executeSql('INSERT INTO shopping_list (product, amount) VALUES (?, ?);', [product, amount]);
-    }, null, updateList);
+    storage.addItem(product, amount, updateList);
     setProduct('');
     setAmount('');
   };
 
   const deleteItem = (id) => {
-    db.transaction(tx => {
-      tx.executeSql('DELETE FROM shopping_list WHERE id = ?;', [id]);
-    }, null, updateList);
+    storage.deleteItem(id, updateList);
   };
 
   return (
